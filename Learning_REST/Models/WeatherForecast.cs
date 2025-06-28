@@ -1,4 +1,4 @@
-namespace Learning_REST
+namespace Learning_REST.Models
 // THIS A MODEL
 // remember models represent stored data
 {
@@ -11,6 +11,10 @@ namespace Learning_REST
         public int TemperatureC { get; set; }
 
         public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+
+        public double PrecipitationAmount { get; set; }
+
+        public string PrecipitationType { get; set; } = "None";
 
         public string? Summary { get; set; }
     }

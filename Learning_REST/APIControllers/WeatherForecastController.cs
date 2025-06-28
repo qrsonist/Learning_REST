@@ -1,12 +1,15 @@
+using Learning_REST.Models;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Learning_REST.Controllers
+namespace Learning_REST.APIControllers
 {
     [ApiController]
+    // can be accessed by going to site URL /NAME_OF_CONTROLLER
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
     {
+        // static indicates that upon reinstantiation of the object, the variable will not be reinitialized
         private static readonly string[] Summaries = new[]
         {
             "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
@@ -31,9 +34,10 @@ namespace Learning_REST.Controllers
             
             // making a list because arrays are used statically in most cases
             List<WeatherForecast> forecasts = new List<WeatherForecast>();
+
             for (int index = 0; index <= 4; index++)
             {
-                int RandomTemperatureC = Random.Shared.Next(-20, 45);
+                int RandomTemperatureC = Random.Shared.Next(-5, 45);
                 // "?" makes the variable nullable
                 string? WeatherSummary = null;
                 int ThresholdIndex = 0;
@@ -50,11 +54,23 @@ namespace Learning_REST.Controllers
                     }
 
                 }
+
+                double ProjectedPrecipitationAmount = 0;
+                string ProjectedPrecipicationType = "None";
+                // 33% chance of precipitation on any given day
+                if (Random.Shared.GetItems([false, true, false], 1)[0])
+                {
+                    ProjectedPrecipitationAmount = Math.Floor((Math.Sqrt(Random.Shared.NextDouble() * 36)) * 100)/100;
+                    ProjectedPrecipicationType = RandomTemperatureC <= 0 ? "Snow/Ice" : "Rain";
+                }
+
                 // adding rather than appending becuase appending does not modify the list in-place and instead returns a new iterable with the item appended
                 forecasts.Add(new WeatherForecast()
                 {
                     Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
                     TemperatureC = RandomTemperatureC,
+                    PrecipitationAmount = ProjectedPrecipitationAmount,
+                    PrecipitationType = ProjectedPrecipicationType,
                     Summary = WeatherSummary
                 });
             }
