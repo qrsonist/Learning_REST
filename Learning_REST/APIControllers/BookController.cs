@@ -9,6 +9,7 @@ namespace Learning_REST.APIControllers
     [ApiController]
     public class BookController : ControllerBase
     {
+        // list is static so that it is not re-initialized every single time the controller is called
         static private List<Book> allBooks = new List<Book>
         {
 
@@ -38,7 +39,7 @@ namespace Learning_REST.APIControllers
                 Title = "Sharp Objects",
                 Author = "Flynn, Gillian",
                 YearPublished = 2006,
-                Genres = { 
+                Genres = {
                     "Psychological Thriller",
                     "Southern Gothic",
                     "Mystery"
@@ -134,5 +135,92 @@ namespace Learning_REST.APIControllers
             }
         };
 
+        // denotes that the below function corresponds to the HTTP Get method
+        [HttpGet]
+        // return type is ActionResult because regardless of the data type we want to return the method must also return a status code (200 - Ok, 404 - Error, etc.)
+        public ActionResult<List<Book>> getBooks()
+        {
+            // the Ok() object is responsible for the status code
+            return Ok(allBooks);
+        }
+
+        // another get method but the associated function will be responsible for serving user data for specific book
+        // '"{id}"' denotes that we expect the id of a book to be provided when making the request
+        [HttpGet("{id}")]
+        public ActionResult<Book> getBookById(int id)
+        {
+            // returns the first element of the allBooks sequence whose Id value matches the id parameter
+            Book? book = allBooks.FirstOrDefault(x => x.Id == id);
+
+            // see if the book exists
+            if (book == null)
+            {
+                // 404 status code
+                return NotFound($"Book with ID: {id} does not exist.");
+            }
+
+            return Ok(book);
+        }
+
+        [HttpPost]
+        public ActionResult addBook(Book bookToAdd)
+        {
+            if (bookToAdd == null)
+            {
+                // 400 status code - data that was sent is not in a valid format
+                return BadRequest("Try again!");
+            }
+
+            if (allBooks.FirstOrDefault(x => x.Id == bookToAdd.Id) != null)
+            {
+                // 409 status code - indicates that there is some conflict with the current state of the resource
+                return Conflict($"Book with ID: {bookToAdd.Id} already exists.");
+            }
+
+            // NO GAPS!!!
+            bookToAdd.Id = allBooks.Count + 1;
+            allBooks.Add(bookToAdd);
+
+            // 201 status code - indicates a resouce was created
+            //                          route      id (which i found out is neccessary)   \/ and book
+            return CreatedAtAction(nameof(getBookById), new { Id = bookToAdd.Id }, bookToAdd);
+
+        }
+
+        [HttpPut("{id}")]
+        public ActionResult updateBook(int id, Book bookToPut)
+        {
+            Book? bookToReplace = allBooks.FirstOrDefault(x => x.Id == id);
+            if (bookToReplace == null)
+            {
+                return NotFound($"Book with ID: {id} does not exist.");
+            }
+            if (id != bookToPut.Id)
+            {
+                return Conflict($"Mismatch between destination ID: {id} and provided book's ID: {bookToPut.Id}");
+            }
+
+            allBooks[bookToReplace.Id-1] = bookToPut;
+            return CreatedAtAction(nameof(getBookById), new { Id = bookToPut.Id }, bookToPut);
+        }
+
+        [HttpDelete("{id}")]
+        public ActionResult deleteBook(int id)
+        {
+            Book? bookToDelete = allBooks.FirstOrDefault(x => x.Id == id);
+            if (bookToDelete == null)
+            {
+                return NotFound($"Book with ID: {id} does not exist.");
+            }
+
+            allBooks.Remove(bookToDelete);
+            // iterating over each book whose id is greater than the book that was just removed
+            foreach (Book book in allBooks.Where(x => x.Id > id))
+            {
+                // subtracting the Id because NO GAPS >:(
+                book.Id--;
+            }
+            return Ok($"Book with ID: {id} successfully removed.");
+        }
     }
 }

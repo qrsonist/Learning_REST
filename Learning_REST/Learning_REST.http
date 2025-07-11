@@ -1,6 +1,51 @@
 @Learning_REST_HostAddress = http://localhost:5130
 
+// note that the url matches the route of the controller it wants to access
+// also note that 'Controller' is absent from the paths. i assume it is implied
 GET {{Learning_REST_HostAddress}}/weatherforecast/
+// format of the data we expect
 Accept: application/json
 
 ###
+// same here, check the route of the BookController and we will see it matches what follows the root url
+GET {{Learning_REST_HostAddress}}/api/book
+Accept: application/json
+
+###
+
+// this request has an extra element because it's providing the id of the book to get
+GET {{Learning_REST_HostAddress}}/api/book/10
+Accept: application/json
+
+###
+
+// this request matches the destination of another request but since it is a different type of request it's fine
+POST {{Learning_REST_HostAddress}}/api/book
+// here we must specify not the return type, but the type of content being posted
+Content-Type: application/json
+{
+  "Id": 123, 
+  "Title": "I'm Getting Started", 
+  "Author": "Roach, Garrett", 
+  "YearPublished": 2025, 
+  "NumPages": 3, 
+  "Genres": ["Biography", "Nonfiction"]
+}
+
+###
+
+PUT {{Learning_REST_HostAddress}}/api/book/11
+Content-Type: application/json
+{
+  "Id": 11, 
+  "Title": "I'm Getting Better", 
+  "Author": "Roach, Garrett", 
+  "YearPublished": 2025, 
+  "NumPages": 3, 
+  "Genres": ["Biography", "Nonfiction"]
+}
+
+###
+
+DELETE {{Learning_REST_HostAddress}}/api/book/12
+Accept: application/json

@@ -14,7 +14,7 @@
 
         public int NumPages { get; set; }
 
-        public List<string> Genres { get; set; } = new List<string>{ "Unknown" };
+        public List<string> Genres { get; set; } = new List<string>{};
 
     }
 }
