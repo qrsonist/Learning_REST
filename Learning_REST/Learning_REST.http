@@ -14,7 +14,7 @@ Accept: application/json
 ###
 
 // this request has an extra element because it's providing the id of the book to get
-GET {{Learning_REST_HostAddress}}/api/book/10
+GET {{Learning_REST_HostAddress}}/api/book/11
 Accept: application/json
 
 ###
@@ -23,9 +23,9 @@ Accept: application/json
 POST {{Learning_REST_HostAddress}}/api/book
 // here we must specify not the return type, but the type of content being posted
 Content-Type: application/json
+// DO NOT PROVIDE ID ANYMORE, WILL BE GENERATED AUTOMATICALLY IN DB
 {
-  "Id": 123, 
-  "Title": "I'm Getting Started", 
+  "Title": "I'm Getting Started",
   "Author": "Roach, Garrett", 
   "YearPublished": 2025, 
   "NumPages": 3, 
@@ -37,7 +37,6 @@ Content-Type: application/json
 PUT {{Learning_REST_HostAddress}}/api/book/11
 Content-Type: application/json
 {
-  "Id": 11, 
   "Title": "I'm Getting Better", 
   "Author": "Roach, Garrett", 
   "YearPublished": 2025, 
@@ -47,5 +46,5 @@ Content-Type: application/json
 
 ###
 
-DELETE {{Learning_REST_HostAddress}}/api/book/12
+DELETE {{Learning_REST_HostAddress}}/api/book/15
 Accept: application/json

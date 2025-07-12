@@ -1,6 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Learning_REST.Models;
+using Learning_REST.Data;
+using Microsoft.EntityFrameworkCore;
+using System.Reflection;
 
 namespace Learning_REST.APIControllers
 {
@@ -9,10 +12,10 @@ namespace Learning_REST.APIControllers
     [ApiController]
     public class BookController : ControllerBase
     {
-        // list is static so that it is not re-initialized every single time the controller is called
+        /*
+        NO MORE LIST, WE HAVE DB NOW!!!
         static private List<Book> allBooks = new List<Book>
         {
-
             new Book
             {
                 Id = 1,
@@ -134,23 +137,37 @@ namespace Learning_REST.APIControllers
                 }
             }
         };
+        */
+
+        // variable for the context
+        private readonly Learning_RESTContext _context;
+
+        // constructor sets the context
+        public BookController(Learning_RESTContext context)
+        {
+            _context = context;
+        }
+
+
 
         // denotes that the below function corresponds to the HTTP Get method
         [HttpGet]
         // return type is ActionResult because regardless of the data type we want to return the method must also return a status code (200 - Ok, 404 - Error, etc.)
-        public ActionResult<List<Book>> getBooks()
+        // function has been made asynchronous so that UI doesn't freeze or become unresponsive for the runtime of the function
+        public async Task<ActionResult<List<Book>>> getBooks()
         {
             // the Ok() object is responsible for the status code
-            return Ok(allBooks);
+            //     waits for books to be yoinked from database
+            return Ok(await _context.Books.ToListAsync());
         }
 
         // another get method but the associated function will be responsible for serving user data for specific book
         // '"{id}"' denotes that we expect the id of a book to be provided when making the request
         [HttpGet("{id}")]
-        public ActionResult<Book> getBookById(int id)
+        public async Task<ActionResult<Book>> getBookById(int id)
         {
-            // returns the first element of the allBooks sequence whose Id value matches the id parameter
-            Book? book = allBooks.FirstOrDefault(x => x.Id == id);
+            // finding book in db whose primary key matches the provided id
+            Book? book = await _context.Books.FindAsync(id);
 
             // see if the book exists
             if (book == null)
@@ -161,66 +178,71 @@ namespace Learning_REST.APIControllers
 
             return Ok(book);
         }
-
+        
         [HttpPost]
-        public ActionResult addBook(Book bookToAdd)
+        public async Task<ActionResult> addBook(Book bookToAdd)
         {
             if (bookToAdd == null)
             {
                 // 400 status code - data that was sent is not in a valid format
                 return BadRequest("Try again!");
             }
-
-            if (allBooks.FirstOrDefault(x => x.Id == bookToAdd.Id) != null)
+            
+            // yes i'm aware i could make a unique hash for each book or something but not right now
+            if (await _context.Books.FirstOrDefaultAsync(x => x.Title == bookToAdd.Title && x.Author == bookToAdd.Author) != null)
             {
                 // 409 status code - indicates that there is some conflict with the current state of the resource
-                return Conflict($"Book with ID: {bookToAdd.Id} already exists.");
+                return Conflict($"Book with Title: {bookToAdd.Title} by Author: {bookToAdd.Author} already exists.");
             }
 
-            // NO GAPS!!!
-            bookToAdd.Id = allBooks.Count + 1;
-            allBooks.Add(bookToAdd);
+            _context.Books.Add(bookToAdd);
+            // must save changes after performing db operation
+            await _context.SaveChangesAsync();
 
             // 201 status code - indicates a resouce was created
             //                          route      id (which i found out is neccessary)   \/ and book
             return CreatedAtAction(nameof(getBookById), new { Id = bookToAdd.Id }, bookToAdd);
 
         }
-
+        
         [HttpPut("{id}")]
-        public ActionResult updateBook(int id, Book bookToPut)
+        public async Task<ActionResult> updateBook(int id, Book bookToPut)
         {
-            Book? bookToReplace = allBooks.FirstOrDefault(x => x.Id == id);
+            Book? bookToReplace = await _context.Books.FindAsync(id);
             if (bookToReplace == null)
             {
                 return NotFound($"Book with ID: {id} does not exist.");
             }
-            if (id != bookToPut.Id)
+            
+            // get all properties whose names are not Id
+            var properties = typeof(Book).GetProperties().Where(p => p.Name != "Id");
+
+            // iterate over to mirror each property to the target
+            foreach (PropertyInfo property in properties)
             {
-                return Conflict($"Mismatch between destination ID: {id} and provided book's ID: {bookToPut.Id}");
+                property.SetValue(bookToReplace, property.GetValue(bookToPut));
             }
 
-            allBooks[bookToReplace.Id-1] = bookToPut;
-            return CreatedAtAction(nameof(getBookById), new { Id = bookToPut.Id }, bookToPut);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(getBookById), new { Id = id }, bookToPut);
         }
 
+       
         [HttpDelete("{id}")]
-        public ActionResult deleteBook(int id)
+        public async Task<ActionResult> deleteBook(int id)
         {
-            Book? bookToDelete = allBooks.FirstOrDefault(x => x.Id == id);
+            Book? bookToDelete = await _context.Books.FindAsync(id);
             if (bookToDelete == null)
             {
                 return NotFound($"Book with ID: {id} does not exist.");
             }
 
-            allBooks.Remove(bookToDelete);
-            // iterating over each book whose id is greater than the book that was just removed
-            foreach (Book book in allBooks.Where(x => x.Id > id))
-            {
-                // subtracting the Id because NO GAPS >:(
-                book.Id--;
-            }
+            _context.Books.Remove(bookToDelete);
+            await _context.SaveChangesAsync();
+            
             return Ok($"Book with ID: {id} successfully removed.");
         }
+       
     }
 }
